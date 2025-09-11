@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  fastapi-chatbot:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - VECTOR_DB_PATH=/app/data/vectordb/index
+      - EMBEDDING_MODEL=all-mpnet-base-v2
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Optional: Add Redis for caching
+  # redis:
+  #   image: redis:alpine
+  #   ports:
+  #     - "6379:6379"
+
+  # Optional: Add monitoring
+  # prometheus:
+  #   image: prom/prometheus
+  #   ports:
+  #     - "9090:9090"

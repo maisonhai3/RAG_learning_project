@@ -1,0 +1,69 @@
+# Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# HTTP Client & Web Scraping
+aiohttp==3.9.1
+beautifulsoup4==4.12.2
+lxml==4.9.3
+html5lib==1.1
+requests==2.31.0
+
+# Text Processing
+nltk==3.8.1
+spacy==3.7.2
+python-multipart==0.0.6
+
+# Embeddings & ML
+sentence-transformers==2.2.2
+torch==2.1.2
+torchvision==0.16.2
+torchaudio==2.1.2
+transformers==4.36.2
+numpy==1.24.4
+scikit-learn==1.3.2
+
+# Vector Database
+faiss-cpu==1.7.4
+chromadb==0.4.18
+
+# LLM Integration
+openai==1.6.1
+langchain==0.0.350
+langchain-openai==0.0.2
+
+# Data Processing
+pandas==2.1.4
+jsonlines==4.0.0
+
+# Database & Caching
+sqlite-vec==0.0.1a7
+redis==5.0.1
+
+# API & Middleware
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+slowapi==0.1.9
+python-multipart==0.0.6
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+pytest-mock==3.12.0
+pytest-cov==4.1.0
+
+# Monitoring & Logging
+structlog==23.2.0
+prometheus-client==0.19.0
+
+# Development Tools
+black==23.11.0
+flake8==6.1.0
+isort==5.12.0
+pre-commit==3.6.0
+
+# Environment Management
+python-dotenv==1.0.0
