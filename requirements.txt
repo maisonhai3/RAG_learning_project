@@ -11,7 +11,10 @@ pandas
 numpy
 nltk
 spacy
-openai
+langchain
+langchain-openai
+langchain-google-genai
+langchain-core
 httpx
 python-dotenv
 pytest
