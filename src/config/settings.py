@@ -10,8 +10,13 @@ class Settings:
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
     API_PORT: int = int(os.getenv("API_PORT", "8000"))
     
+    LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "openai")
+    
     # OpenAI Configuration
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+
+    # Gemini Configuration
+    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
 
     # Model Configuration
     MODEL: str = os.getenv("MODEL", "gpt-3.5-turbo")

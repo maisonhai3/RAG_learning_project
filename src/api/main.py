@@ -43,9 +43,16 @@ class RAGService:
         
                 # Initialize LLM service (optional for demo)
         try:
+            # Determine which API key to use based on provider
+            api_key = ""
+            if settings.LLM_PROVIDER == "openai":
+                api_key = settings.OPENAI_API_KEY
+            elif settings.LLM_PROVIDER == "gemini":
+                api_key = settings.GEMINI_API_KEY
+            
             self.llm_service = LLMService(
-                provider="openai",
-                api_key=settings.OPENAI_API_KEY,
+                provider=settings.LLM_PROVIDER,
+                api_key=api_key,
                 model=settings.MODEL
             )
         except Exception as e:

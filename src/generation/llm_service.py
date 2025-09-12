@@ -3,6 +3,7 @@ import asyncio
 import os
 from dataclasses import dataclass
 from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 from langchain_core.callbacks import AsyncCallbackHandler
 from pydantic import SecretStr
@@ -50,6 +51,21 @@ class LLMService:
                     api_key=api_key,
                     temperature=0.7
                 )
+        elif provider == "gemini":
+            if not api_key:
+                # For testing purposes, allow initialization without API key
+                if os.getenv("TESTING", "false").lower() == "true":
+                    self.llm = None
+                else:
+                    raise ValueError("GEMINI_API_KEY environment variable required")
+            else:
+                # Map common model names to Gemini model names
+                gemini_model = self._map_to_gemini_model(model)
+                self.llm = ChatGoogleGenerativeAI(
+                    model=gemini_model,
+                    google_api_key=api_key,
+                    temperature=0.7
+                )
         else:
             raise ValueError(f"Unsupported provider: {provider}")
     
@@ -58,28 +74,31 @@ class LLMService:
                               max_tokens: int = 1000) -> LLMResponse:
         """Generate response from LLM."""
         try:
-            #TODO: why do we need to check "openai" and the API key in this method? This should be handled in the constructor.
+            if self.llm is None:
+                raise ValueError("LLM not initialized (missing API key)")
+            
+            # Update temperature for this request
+            self.llm.temperature = temperature
+            
+            # Set max tokens for OpenAI (Gemini uses max_output_tokens)
             if self.provider == "openai":
-                if self.llm is None:
-                    raise ValueError("LLM not initialized (missing API key)")
-                
-                # Update temperature for this request
-                self.llm.temperature = temperature
                 self.llm.max_tokens = max_tokens
-                
-                # Create message and get response
-                message = HumanMessage(content=prompt)
-                response = await self.llm.ainvoke([message])
-                
-                # Estimate tokens (LangChain doesn't always provide usage info)
-                estimated_tokens = self.estimate_tokens(prompt + response.content)
-                
-                return LLMResponse(
-                    content=response.content,
-                    tokens_used=estimated_tokens,
-                    model=self.model,
-                    finish_reason="stop"  # Default finish reason
-                )
+            elif self.provider == "gemini":
+                self.llm.max_output_tokens = max_tokens
+            
+            # Create message and get response
+            message = HumanMessage(content=prompt)
+            response = await self.llm.ainvoke([message])
+            
+            # Estimate tokens (LangChain doesn't always provide usage info)
+            estimated_tokens = self.estimate_tokens(prompt + response.content)
+            
+            return LLMResponse(
+                content=response.content,
+                tokens_used=estimated_tokens,
+                model=self.model,
+                finish_reason="stop"  # Default finish reason
+            )
         except Exception as e:
             raise Exception(f"LLM generation failed: {str(e)}")
     
@@ -91,19 +110,29 @@ class LLMService:
                             temperature: float = 0.7) -> AsyncIterator[str]:
         """Stream response from LLM."""
         try:
-            #TODO: why do we need to check "openai" and the API key in this method? This should be handled in the constructor.
-            if self.provider == "openai":
-                if self.llm is None:
-                    yield "Error: LLM not initialized (missing API key)"
-                    return
-                
-                # Update temperature for this request
-                self.llm.temperature = temperature
-                
-                # Create message and stream response
-                message = HumanMessage(content=prompt)
-                async for chunk in self.llm.astream([message]):
-                    if chunk.content:
-                        yield chunk.content
+            if self.llm is None:
+                yield "Error: LLM not initialized (missing API key)"
+                return
+            
+            # Update temperature for this request
+            self.llm.temperature = temperature
+            
+            # Create message and stream response
+            message = HumanMessage(content=prompt)
+            async for chunk in self.llm.astream([message]):
+                if chunk.content:
+                    yield chunk.content
         except Exception as e:
             yield f"Error: {str(e)}"
+    
+    def _map_to_gemini_model(self, model: str) -> str:
+        """Map common model names to Gemini model names."""
+        model_mapping = {
+            "gpt-3.5-turbo": "gemini-pro",
+            "gpt-4": "gemini-pro",
+            "gpt-4-turbo": "gemini-1.5-pro",
+            "gemini-pro": "gemini-pro",
+            "gemini-1.5-pro": "gemini-1.5-pro",
+            "gemini-1.5-flash": "gemini-1.5-flash"
+        }
+        return model_mapping.get(model, "gemini-pro")
