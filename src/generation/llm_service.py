@@ -51,6 +51,7 @@ class LLMService:
                               max_tokens: int = 1000) -> LLMResponse:
         """Generate response from LLM."""
         try:
+            #TODO: why do we need to check "openai" and the API key in this method? This should be handled in the constructor.
             if self.provider == "openai":
                 if self.llm is None:
                     raise ValueError("LLM not initialized (missing API key)")
@@ -83,6 +84,7 @@ class LLMService:
                             temperature: float = 0.7) -> AsyncIterator[str]:
         """Stream response from LLM."""
         try:
+            #TODO: why do we need to check "openai" and the API key in this method? This should be handled in the constructor.
             if self.provider == "openai":
                 if self.llm is None:
                     yield "Error: LLM not initialized (missing API key)"
