@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional
 from datetime import datetime
 from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class SearchStrategy(str, Enum):
@@ -11,14 +12,14 @@ class SearchStrategy(str, Enum):
 
 
 class QuestionRequest(BaseModel):
-    question: str = Field(..., min_length=1, max_length=500, 
-                         description="The question to ask")
-    max_chunks: int = Field(5, ge=1, le=10, 
-                           description="Maximum number of context chunks")
-    temperature: float = Field(0.7, ge=0.0, le=1.0, 
-                              description="LLM temperature")
+    question: str = Field(..., min_length=1, max_length=500,
+                          description="The question to ask")
+    max_chunks: int = Field(5, ge=1, le=10,
+                            description="Maximum number of context chunks")
+    temperature: float = Field(0.7, ge=0.0, le=1.0,
+                               description="LLM temperature")
     search_strategy: SearchStrategy = Field(SearchStrategy.HYBRID,
-                                           description="Search strategy")
+                                            description="Search strategy")
     include_sources: bool = Field(True, description="Include source citations")
 
 

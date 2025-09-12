@@ -1,16 +1,18 @@
-import aiohttp
-import asyncio
-from bs4 import BeautifulSoup
-from typing import List, Dict
 import os
+from typing import List
+
+import aiohttp
+from bs4 import BeautifulSoup
 
 BASE_URL = "https://fastapi.tiangolo.com"
 RAW_DATA_DIR = "data/raw"
+
 
 class DocumentPage:
     def __init__(self, url: str, html: str):
         self.url = url
         self.html = html
+
 
 class FastAPIScraper:
     def __init__(self, base_url: str = BASE_URL):

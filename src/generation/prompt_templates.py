@@ -1,4 +1,5 @@
 from typing import List
+
 from src.retrieval.retriever import RetrievalResult
 
 
@@ -61,9 +62,9 @@ Please provide:
 SOLUTION:"""
 
     @staticmethod
-    def build_context_aware_prompt(question: str, 
-                                  results: List[RetrievalResult],
-                                  prompt_type: str = "qa") -> str:
+    def build_context_aware_prompt(question: str,
+                                   results: List[RetrievalResult],
+                                   prompt_type: str = "qa") -> str:
         """Build a context-aware prompt from retrieval results."""
         # Combine context from multiple sources
         context_parts = []
@@ -71,12 +72,12 @@ SOLUTION:"""
             source_info = f"Source {i}"
             if result.source_url:
                 source_info += f" ({result.source_url})"
-            
+
             context_part = f"{source_info}:\n{result.text}"
             context_parts.append(context_part)
-        
+
         context = "\n\n---\n\n".join(context_parts)
-        
+
         # Select appropriate prompt template
         if prompt_type == "qa":
             return PromptTemplates.qa_prompt(context, question)

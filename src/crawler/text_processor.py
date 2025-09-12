@@ -1,14 +1,17 @@
-from bs4 import BeautifulSoup
-from typing import List, Dict
-import re
 import os
+import re
+from typing import List, Dict
+
+from bs4 import BeautifulSoup
 
 PROCESSED_DATA_DIR = "data/processed"
+
 
 class TextChunk:
     def __init__(self, text: str, metadata: Dict):
         self.text = text
         self.metadata = metadata
+
 
 class TextProcessor:
     def __init__(self):
