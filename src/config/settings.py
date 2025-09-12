@@ -12,6 +12,11 @@ class Settings:
     
     # OpenAI Configuration
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+
+    # Model Configuration
+    MODEL: str = os.getenv("MODEL", "gpt-3.5-turbo")
+    # MAX_TOKENS: int = int(os.getenv("MAX_TOKENS", "1500"))
+    # TEMPERATURE: float = float(os.getenv("TEMPERATURE", "0.7"))
     
     # Vector Database Configuration
     VECTOR_DB_PATH: str = os.getenv("VECTOR_DB_PATH", "./data/vectordb/index")

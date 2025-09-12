@@ -11,12 +11,14 @@ from src.api.models import (
     QuestionRequest, ChatResponse, HealthResponse, 
     FeedbackRequest, ErrorResponse, Source
 )
+from src.config.settings import Settings
 from src.retrieval.retriever import AdvancedRetriever
 from src.embeddings.embedding_service import EmbeddingService
 from src.embeddings.vector_store import VectorStore
 from src.generation.llm_service import LLMService
 from src.generation.prompt_templates import PromptTemplates
 
+settings = Settings()
 
 class RAGService:
     def __init__(self):
@@ -41,7 +43,11 @@ class RAGService:
         
                 # Initialize LLM service (optional for demo)
         try:
-            self.llm_service = LLMService()
+            self.llm_service = LLMService(
+                provider="openai",
+                api_key=settings.OPENAI_API_KEY,
+                model=settings.MODEL
+            )
         except Exception as e:
             print(f"Warning: Could not initialize LLM service: {e}")
             print("Running in demo mode without LLM")

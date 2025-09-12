@@ -5,6 +5,9 @@ from dataclasses import dataclass
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.callbacks import AsyncCallbackHandler
+from pydantic import SecretStr
+
+from src.config.settings import Settings
 
 
 @dataclass
@@ -24,13 +27,17 @@ class StreamingCallbackHandler(AsyncCallbackHandler):
 
 
 class LLMService:
-    def __init__(self, provider: str = "openai", model: str = "gpt-3.5-turbo"):
+    def __init__(
+        self,
+        provider: str = "openai",
+        api_key: SecretStr = "",
+        model: str = "gpt-3.5-turbo"
+    ):
         """Initialize LLM service with specified provider and model."""
         self.provider = provider
         self.model = model
         
         if provider == "openai":
-            api_key = os.getenv("OPENAI_API_KEY")
             if not api_key:
                 # For testing purposes, allow initialization without API key
                 if os.getenv("TESTING", "false").lower() == "true":
