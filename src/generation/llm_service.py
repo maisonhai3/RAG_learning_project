@@ -1,9 +1,10 @@
 from typing import Dict, List, Optional, AsyncIterator
-import openai
-from openai import OpenAI
 import asyncio
 import os
 from dataclasses import dataclass
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from langchain_core.callbacks import AsyncCallbackHandler
 
 
 @dataclass
@@ -12,6 +13,14 @@ class LLMResponse:
     tokens_used: int
     model: str
     finish_reason: str
+
+
+class StreamingCallbackHandler(AsyncCallbackHandler):
+    def __init__(self):
+        self.tokens = []
+    
+    async def on_llm_new_token(self, token: str, **kwargs) -> None:
+        self.tokens.append(token)
 
 
 class LLMService:
@@ -25,11 +34,15 @@ class LLMService:
             if not api_key:
                 # For testing purposes, allow initialization without API key
                 if os.getenv("TESTING", "false").lower() == "true":
-                    self.client = None
+                    self.llm = None
                 else:
                     raise ValueError("OPENAI_API_KEY environment variable required")
             else:
-                self.client = OpenAI(api_key=api_key)
+                self.llm = ChatOpenAI(
+                    model=model,
+                    api_key=api_key,
+                    temperature=0.7
+                )
         else:
             raise ValueError(f"Unsupported provider: {provider}")
     
@@ -39,18 +52,25 @@ class LLMService:
         """Generate response from LLM."""
         try:
             if self.provider == "openai":
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=temperature,
-                    max_tokens=max_tokens
-                )
+                if self.llm is None:
+                    raise ValueError("LLM not initialized (missing API key)")
+                
+                # Update temperature for this request
+                self.llm.temperature = temperature
+                self.llm.max_tokens = max_tokens
+                
+                # Create message and get response
+                message = HumanMessage(content=prompt)
+                response = await self.llm.ainvoke([message])
+                
+                # Estimate tokens (LangChain doesn't always provide usage info)
+                estimated_tokens = self.estimate_tokens(prompt + response.content)
                 
                 return LLMResponse(
-                    content=response.choices[0].message.content,
-                    tokens_used=response.usage.total_tokens,
+                    content=response.content,
+                    tokens_used=estimated_tokens,
                     model=self.model,
-                    finish_reason=response.choices[0].finish_reason
+                    finish_reason="stop"  # Default finish reason
                 )
         except Exception as e:
             raise Exception(f"LLM generation failed: {str(e)}")
@@ -64,15 +84,17 @@ class LLMService:
         """Stream response from LLM."""
         try:
             if self.provider == "openai":
-                stream = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=temperature,
-                    stream=True
-                )
+                if self.llm is None:
+                    yield "Error: LLM not initialized (missing API key)"
+                    return
                 
-                for chunk in stream:
-                    if chunk.choices[0].delta.content is not None:
-                        yield chunk.choices[0].delta.content
+                # Update temperature for this request
+                self.llm.temperature = temperature
+                
+                # Create message and stream response
+                message = HumanMessage(content=prompt)
+                async for chunk in self.llm.astream([message]):
+                    if chunk.content:
+                        yield chunk.content
         except Exception as e:
             yield f"Error: {str(e)}"
