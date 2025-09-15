@@ -9,7 +9,6 @@ from src.api.models import (
 )
 from src.services import RAGService
 
-
 # Initialize RAG service
 rag_service = RAGService()
 

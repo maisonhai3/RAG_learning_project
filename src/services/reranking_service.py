@@ -1,7 +1,6 @@
-import os
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
 from enum import Enum
+from typing import List, Optional, Tuple
 
 import numpy as np
 
