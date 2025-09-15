@@ -31,8 +31,7 @@ class VectorStore:
         self.texts = []  # Store original texts
         self.metadata = []  # Store metadata for each vector
 
-    def add_vectors(self, vectors: np.ndarray, texts: List[str],
-                    metadata: List[Dict]):
+    def add_vectors(self, vectors: np.ndarray, texts: List[str], metadata: List[Dict]):
         """Add vectors with their corresponding texts and metadata."""
         if len(vectors) != len(texts) or len(texts) != len(metadata):
             raise ValueError("Vectors, texts, and metadata must have same length")
@@ -41,16 +40,16 @@ class VectorStore:
         faiss.normalize_L2(vectors)
 
         # Add to index
-        self.index.add(vectors.astype('float32'))
+        self.index.add(vectors.astype("float32"))
 
         # Store texts and metadata
         self.texts.extend(texts)
         self.metadata.extend(metadata)
 
         # Train index if needed
-        if hasattr(self.index, 'is_trained') and not self.index.is_trained:
+        if hasattr(self.index, "is_trained") and not self.index.is_trained:
             if self.index.ntotal >= 100:  # Minimum training samples
-                self.index.train(vectors.astype('float32'))
+                self.index.train(vectors.astype("float32"))
 
     def search(self, query_vector: np.ndarray, k: int = 5) -> List[SearchResult]:
         """Search for similar vectors."""
@@ -58,7 +57,7 @@ class VectorStore:
             return []
 
         # Normalize query vector
-        query_vector = query_vector.reshape(1, -1).astype('float32')
+        query_vector = query_vector.reshape(1, -1).astype("float32")
         faiss.normalize_L2(query_vector)
 
         # Search
@@ -67,11 +66,13 @@ class VectorStore:
         results = []
         for score, idx in zip(scores[0], indices[0]):
             if idx >= 0 and idx < len(self.texts):
-                results.append(SearchResult(
-                    text=self.texts[idx],
-                    metadata=self.metadata[idx],
-                    score=float(score)
-                ))
+                results.append(
+                    SearchResult(
+                        text=self.texts[idx],
+                        metadata=self.metadata[idx],
+                        score=float(score),
+                    )
+                )
 
         return results
 
@@ -84,13 +85,13 @@ class VectorStore:
 
         # Save texts and metadata
         store_data = {
-            'texts': self.texts,
-            'metadata': self.metadata,
-            'dimension': self.dimension,
-            'index_type': self.index_type
+            "texts": self.texts,
+            "metadata": self.metadata,
+            "dimension": self.dimension,
+            "index_type": self.index_type,
         }
 
-        with open(f"{path}.pkl", 'wb') as f:
+        with open(f"{path}.pkl", "wb") as f:
             pickle.dump(store_data, f)
 
     def load_index(self, path: str):
@@ -99,19 +100,19 @@ class VectorStore:
         self.index = faiss.read_index(f"{path}.faiss")
 
         # Load texts and metadata
-        with open(f"{path}.pkl", 'rb') as f:
+        with open(f"{path}.pkl", "rb") as f:
             store_data = pickle.load(f)
 
-        self.texts = store_data['texts']
-        self.metadata = store_data['metadata']
-        self.dimension = store_data['dimension']
-        self.index_type = store_data['index_type']
+        self.texts = store_data["texts"]
+        self.metadata = store_data["metadata"]
+        self.dimension = store_data["dimension"]
+        self.index_type = store_data["index_type"]
 
     def get_stats(self) -> Dict[str, Any]:
         """Get statistics about the vector store."""
         return {
-            'total_vectors': self.index.ntotal,
-            'dimension': self.dimension,
-            'index_type': self.index_type,
-            'is_trained': getattr(self.index, 'is_trained', True)
+            "total_vectors": self.index.ntotal,
+            "dimension": self.dimension,
+            "index_type": self.index_type,
+            "is_trained": getattr(self.index, "is_trained", True),
         }

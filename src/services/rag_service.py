@@ -12,6 +12,7 @@ except ImportError:
             self.detail = detail
             super().__init__(detail)
 
+
 from src.api.models import QuestionRequest, ChatResponse, Source
 from src.config.settings import Settings
 from src.embeddings.embedding_service import EmbeddingService
@@ -31,7 +32,7 @@ class RAGService:
     def __init__(self):
         """Initialize RAG service components."""
         self.settings = Settings()
-        
+
         # Initialize embedding service
         self.embedding_service = EmbeddingService()
 
@@ -45,27 +46,28 @@ class RAGService:
             self.vector_store.load_index(vector_path)
 
         # Initialize retriever
-        self.retriever = AdvancedRetriever(
-            self.vector_store,
-            self.embedding_service
-        )
+        self.retriever = AdvancedRetriever(self.vector_store, self.embedding_service)
 
         # Initialize LLM service (optional for demo)
         self.llm_service = self._initialize_llm_service()
-        
+
         # Initialize re-ranking service
-        reranking_strategy = getattr(self.settings, "RERANKING_STRATEGY", "disabled").lower()
+        reranking_strategy = getattr(
+            self.settings, "RERANKING_STRATEGY", "disabled"
+        ).lower()
         try:
             strategy = RerankingStrategy(reranking_strategy)
         except ValueError:
             strategy = RerankingStrategy.DISABLED
-            
+
         self.reranking_service = RerankingService(
             strategy=strategy,
             embedding_service=self.embedding_service,
             llm_service=self.llm_service,
-            model_name=getattr(self.settings, 'RERANKING_MODEL', 'ms-marco-MiniLM-L-6-v2'),
-            mmr_lambda=getattr(self.settings, 'MMR_LAMBDA', 0.7)
+            model_name=getattr(
+                self.settings, "RERANKING_MODEL", "ms-marco-MiniLM-L-6-v2"
+            ),
+            mmr_lambda=getattr(self.settings, "MMR_LAMBDA", 0.7),
         )
 
     def _initialize_llm_service(self) -> Optional[LLMService]:
@@ -81,7 +83,7 @@ class RAGService:
             return LLMService(
                 provider=self.settings.LLM_PROVIDER,
                 api_key=api_key,
-                model=self.settings.MODEL
+                model=self.settings.MODEL,
             )
         except Exception as e:
             print(f"Warning: Could not initialize LLM service: {e}")
@@ -91,13 +93,13 @@ class RAGService:
     async def process_question(self, request: QuestionRequest) -> ChatResponse:
         """
         Process a question through the RAG pipeline.
-        
+
         Args:
             request: The question request containing query and parameters
-            
+
         Returns:
             ChatResponse: The generated response with sources and metadata
-            
+
         Raises:
             HTTPException: If processing fails
         """
@@ -106,21 +108,19 @@ class RAGService:
         try:
             # Step 1: Retrieve relevant context
             results = self._retrieve_context(request)
-            
+
             # Step 1.5: Re-rank retrieved documents (if enabled)
             if self.reranking_service.is_enabled():
                 results = self.reranking_service.rerank(request.question, results)
 
             # Step 2: Build prompt with context
             prompt = PromptTemplates.build_context_aware_prompt(
-                request.question,
-                results
+                request.question, results
             )
 
             # Step 3: Generate response
             llm_response = await self.llm_service.generate_response(
-                prompt,
-                temperature=request.temperature
+                prompt, temperature=request.temperature
             )
 
             # Step 4: Prepare sources
@@ -137,7 +137,7 @@ class RAGService:
                 confidence_score=min(confidence, 1.0),
                 processing_time=processing_time,
                 tokens_used=llm_response.tokens_used,
-                search_results_count=len(results)
+                search_results_count=len(results),
             )
 
         except Exception as e:
@@ -147,33 +147,35 @@ class RAGService:
         """Retrieve relevant context based on search strategy."""
         if request.search_strategy == "semantic":
             return self.retriever.semantic_search(
-                request.question,
-                k=request.max_chunks
+                request.question, k=request.max_chunks
             )
         elif request.search_strategy == "keyword":
             return self.retriever.keyword_search(
                 request.question,
                 self.vector_store.texts,
                 self.vector_store.metadata,
-                k=request.max_chunks
+                k=request.max_chunks,
             )
         else:  # hybrid
-            return self.retriever.hybrid_search(
-                request.question,
-                k=request.max_chunks
-            )
+            return self.retriever.hybrid_search(request.question, k=request.max_chunks)
 
     def _prepare_sources(self, results, include_sources: bool) -> list:
         """Prepare source information from search results."""
         sources = []
         if include_sources:
             for result in results:
-                sources.append(Source(
-                    title=result.metadata.get('title', 'FastAPI Documentation'),
-                    url=result.source_url,
-                    relevance_score=result.relevance_score,
-                    excerpt=result.text[:200] + "..." if len(result.text) > 200 else result.text
-                ))
+                sources.append(
+                    Source(
+                        title=result.metadata.get("title", "FastAPI Documentation"),
+                        url=result.source_url,
+                        relevance_score=result.relevance_score,
+                        excerpt=(
+                            result.text[:200] + "..."
+                            if len(result.text) > 200
+                            else result.text
+                        ),
+                    )
+                )
         return sources
 
     def _calculate_confidence(self, results) -> float:
@@ -201,16 +203,22 @@ class RAGService:
     def search_documents(self, query: str, k: int = 5) -> list:
         """Direct document search without LLM generation."""
         results = self.retriever.semantic_search(query, k)
-        
+
         sources = []
         for result in results:
-            sources.append({
-                "title": result.metadata.get('title', 'FastAPI Documentation'),
-                "url": result.source_url,
-                "relevance_score": result.relevance_score,
-                "excerpt": result.text[:300] + "..." if len(result.text) > 300 else result.text
-            })
-        
+            sources.append(
+                {
+                    "title": result.metadata.get("title", "FastAPI Documentation"),
+                    "url": result.source_url,
+                    "relevance_score": result.relevance_score,
+                    "excerpt": (
+                        result.text[:300] + "..."
+                        if len(result.text) > 300
+                        else result.text
+                    ),
+                }
+            )
+
         return sources
 
     def is_healthy(self) -> dict:
@@ -219,5 +227,9 @@ class RAGService:
             "vector_store": "loaded" if self.vector_store.index.ntotal > 0 else "empty",
             "embedding_service": "ready",
             "llm_service": "ready" if self.llm_service else "unavailable",
-            "reranking_service": f"enabled ({self.reranking_service.strategy.value})" if self.reranking_service.is_enabled() else "disabled"
+            "reranking_service": (
+                f"enabled ({self.reranking_service.strategy.value})"
+                if self.reranking_service.is_enabled()
+                else "disabled"
+            ),
         }

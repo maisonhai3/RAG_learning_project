@@ -4,8 +4,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.models import (
-    QuestionRequest, ChatResponse, HealthResponse,
-    FeedbackRequest
+    QuestionRequest,
+    ChatResponse,
+    HealthResponse,
+    FeedbackRequest,
 )
 from src.services import RAGService
 
@@ -17,7 +19,7 @@ app = FastAPI(
     description="RAG-powered Q&A system for FastAPI documentation",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # Add CORS middleware
@@ -37,7 +39,7 @@ async def health_check():
         status="healthy",
         timestamp=datetime.now(),
         version="1.0.0",
-        dependencies=rag_service.is_healthy()
+        dependencies=rag_service.is_healthy(),
     )
 
 
@@ -61,7 +63,7 @@ async def get_usage_stats():
         "vector_store_stats": rag_service.get_vector_store_stats(),
         "total_documents": rag_service.get_total_documents(),
         "embedding_model": rag_service.get_embedding_model_name(),
-        "llm_model": rag_service.get_llm_model_name()
+        "llm_model": rag_service.get_llm_model_name(),
     }
 
 

@@ -44,7 +44,11 @@ class FastAPIScraper:
                     self.save_raw_content(url, html)
                     for link in self.extract_links(html):
                         full_url = self.normalize_url(link)
-                        if full_url and full_url.startswith(self.base_url) and full_url not in self.visited:
+                        if (
+                            full_url
+                            and full_url.startswith(self.base_url)
+                            and full_url not in self.visited
+                        ):
                             self.to_visit.add(full_url)
             return pages
 
@@ -60,10 +64,13 @@ class FastAPIScraper:
         return None
 
     def save_raw_content(self, url: str, html: str):
-        filename = url.replace(self.base_url, "").replace("/", "_").strip("_") or "index"
+        filename = (
+            url.replace(self.base_url, "").replace("/", "_").strip("_") or "index"
+        )
         path = os.path.join(RAW_DATA_DIR, f"{filename}.html")
         with open(path, "w", encoding="utf-8") as f:
             f.write(html)
+
 
 # Example usage (for script):
 # if __name__ == "__main__":

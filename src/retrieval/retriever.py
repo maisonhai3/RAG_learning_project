@@ -6,8 +6,9 @@ from src.embeddings.vector_store import VectorStore
 
 
 class RetrievalResult:
-    def __init__(self, text: str, metadata: Dict, relevance_score: float,
-                 source_url: str = ""):
+    def __init__(
+        self, text: str, metadata: Dict, relevance_score: float, source_url: str = ""
+    ):
         self.text = text
         self.metadata = metadata
         self.relevance_score = relevance_score
@@ -15,14 +16,14 @@ class RetrievalResult:
 
 
 class AdvancedRetriever:
-    def __init__(self, vector_store: VectorStore,
-                 embedding_service: EmbeddingService):
+    def __init__(self, vector_store: VectorStore, embedding_service: EmbeddingService):
         """Initialize retriever with vector store and embedding service."""
         self.vector_store = vector_store
         self.embedding_service = embedding_service
 
-    def semantic_search(self, query: str, k: int = 5,
-                        min_score: float = 0.1) -> List[RetrievalResult]:
+    def semantic_search(
+        self, query: str, k: int = 5, min_score: float = 0.1
+    ) -> List[RetrievalResult]:
         """Perform semantic search using vector similarity."""
         if not query.strip():
             return []
@@ -43,20 +44,21 @@ class AdvancedRetriever:
                     text=result.text,
                     metadata=result.metadata,
                     relevance_score=result.score,
-                    source_url=result.metadata.get('url', '')
+                    source_url=result.metadata.get("url", ""),
                 )
                 results.append(retrieval_result)
 
         return results
 
-    def keyword_search(self, query: str, texts: List[str],
-                       metadata: List[Dict], k: int = 5) -> List[RetrievalResult]:
+    def keyword_search(
+        self, query: str, texts: List[str], metadata: List[Dict], k: int = 5
+    ) -> List[RetrievalResult]:
         """Simple keyword-based search for comparison."""
         query_words = set(query.lower().split())
 
         scores = []
         for i, text in enumerate(texts):
-            text_words = set(re.findall(r'\w+', text.lower()))
+            text_words = set(re.findall(r"\w+", text.lower()))
             # Simple overlap score
             overlap = len(query_words.intersection(text_words))
             score = overlap / len(query_words) if query_words else 0
@@ -68,17 +70,20 @@ class AdvancedRetriever:
         results = []
         for score, idx in scores[:k]:
             if score > 0:
-                results.append(RetrievalResult(
-                    text=texts[idx],
-                    metadata=metadata[idx],
-                    relevance_score=score,
-                    source_url=metadata[idx].get('url', '')
-                ))
+                results.append(
+                    RetrievalResult(
+                        text=texts[idx],
+                        metadata=metadata[idx],
+                        relevance_score=score,
+                        source_url=metadata[idx].get("url", ""),
+                    )
+                )
 
         return results
 
-    def hybrid_search(self, query: str, k: int = 5,
-                      alpha: float = 0.7) -> List[RetrievalResult]:
+    def hybrid_search(
+        self, query: str, k: int = 5, alpha: float = 0.7
+    ) -> List[RetrievalResult]:
         """Combine semantic and keyword search with weighted scoring."""
         # Get semantic results
         semantic_results = self.semantic_search(query, k * 2)
@@ -95,30 +100,31 @@ class AdvancedRetriever:
         for result in semantic_results:
             text_key = result.text[:100]  # Use first 100 chars as key
             combined_results[text_key] = {
-                'result': result,
-                'semantic_score': result.relevance_score,
-                'keyword_score': 0.0
+                "result": result,
+                "semantic_score": result.relevance_score,
+                "keyword_score": 0.0,
             }
 
         # Add keyword scores
         for result in keyword_results:
             text_key = result.text[:100]
             if text_key in combined_results:
-                combined_results[text_key]['keyword_score'] = result.relevance_score
+                combined_results[text_key]["keyword_score"] = result.relevance_score
             else:
                 combined_results[text_key] = {
-                    'result': result,
-                    'semantic_score': 0.0,
-                    'keyword_score': result.relevance_score
+                    "result": result,
+                    "semantic_score": 0.0,
+                    "keyword_score": result.relevance_score,
                 }
 
         # Calculate hybrid scores
         final_results = []
         for data in combined_results.values():
-            hybrid_score = (alpha * data['semantic_score'] +
-                            (1 - alpha) * data['keyword_score'])
+            hybrid_score = (
+                alpha * data["semantic_score"] + (1 - alpha) * data["keyword_score"]
+            )
 
-            result = data['result']
+            result = data["result"]
             result.relevance_score = hybrid_score
             final_results.append(result)
 
@@ -126,8 +132,9 @@ class AdvancedRetriever:
         final_results.sort(key=lambda x: x.relevance_score, reverse=True)
         return final_results[:k]
 
-    def filtered_search(self, query: str, filters: Dict,
-                        k: int = 5) -> List[RetrievalResult]:
+    def filtered_search(
+        self, query: str, filters: Dict, k: int = 5
+    ) -> List[RetrievalResult]:
         """Search with metadata filtering."""
         # First get all semantic results
         all_results = self.semantic_search(query, k * 5)
@@ -147,8 +154,9 @@ class AdvancedRetriever:
 
         return filtered_results[:k]
 
-    def get_context_window(self, results: List[RetrievalResult],
-                           max_length: int = 2000) -> str:
+    def get_context_window(
+        self, results: List[RetrievalResult], max_length: int = 2000
+    ) -> str:
         """Combine multiple retrieval results into a context window."""
         context_parts = []
         current_length = 0
