@@ -31,6 +31,11 @@ class Settings:
     # RAG Configuration
     MAX_CHUNKS: int = int(os.getenv("MAX_CHUNKS", "5"))
     DEFAULT_TEMPERATURE: float = float(os.getenv("DEFAULT_TEMPERATURE", "0.7"))
+    
+    # Re-ranking Configuration
+    RERANKING_STRATEGY: str = os.getenv("RERANKING_STRATEGY", "disabled")  # disabled, cross_encoder, llm_based, diversity_mmr, hybrid
+    RERANKING_MODEL: str = os.getenv("RERANKING_MODEL", "ms-marco-MiniLM-L-6-v2")  # Cross-encoder model name
+    MMR_LAMBDA: float = float(os.getenv("MMR_LAMBDA", "0.7"))  # MMR diversity parameter
 
     # Rate Limiting
     REQUESTS_PER_MINUTE: int = int(os.getenv("REQUESTS_PER_MINUTE", "60"))

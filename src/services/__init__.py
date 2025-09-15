@@ -6,5 +6,6 @@ different components of the RAG system.
 """
 
 from .rag_service import RAGService
+from .reranking_service import RerankingService, RerankingStrategy
 
-__all__ = ["RAGService"]
+__all__ = ["RAGService", "RerankingService", "RerankingStrategy"]

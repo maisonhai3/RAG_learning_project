@@ -19,6 +19,7 @@ from src.embeddings.vector_store import VectorStore
 from src.generation.llm_service import LLMService
 from src.generation.prompt_templates import PromptTemplates
 from src.retrieval.retriever import AdvancedRetriever
+from src.services.reranking_service import RerankingService, RerankingStrategy
 
 
 class RAGService:
@@ -51,6 +52,21 @@ class RAGService:
 
         # Initialize LLM service (optional for demo)
         self.llm_service = self._initialize_llm_service()
+        
+        # Initialize re-ranking service
+        reranking_strategy = getattr(self.settings, "RERANKING_STRATEGY", "disabled").lower()
+        try:
+            strategy = RerankingStrategy(reranking_strategy)
+        except ValueError:
+            strategy = RerankingStrategy.DISABLED
+            
+        self.reranking_service = RerankingService(
+            strategy=strategy,
+            embedding_service=self.embedding_service,
+            llm_service=self.llm_service,
+            model_name=getattr(self.settings, 'RERANKING_MODEL', 'ms-marco-MiniLM-L-6-v2'),
+            mmr_lambda=getattr(self.settings, 'MMR_LAMBDA', 0.7)
+        )
 
     def _initialize_llm_service(self) -> Optional[LLMService]:
         """Initialize LLM service with proper error handling."""
@@ -90,6 +106,10 @@ class RAGService:
         try:
             # Step 1: Retrieve relevant context
             results = self._retrieve_context(request)
+            
+            # Step 1.5: Re-rank retrieved documents (if enabled)
+            if self.reranking_service.is_enabled():
+                results = self.reranking_service.rerank(request.question, results)
 
             # Step 2: Build prompt with context
             prompt = PromptTemplates.build_context_aware_prompt(
@@ -198,5 +218,6 @@ class RAGService:
         return {
             "vector_store": "loaded" if self.vector_store.index.ntotal > 0 else "empty",
             "embedding_service": "ready",
-            "llm_service": "ready" if self.llm_service else "unavailable"
+            "llm_service": "ready" if self.llm_service else "unavailable",
+            "reranking_service": f"enabled ({self.reranking_service.strategy.value})" if self.reranking_service.is_enabled() else "disabled"
         }
