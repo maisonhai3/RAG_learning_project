@@ -255,41 +255,35 @@ class RerankingService:
         
     def _create_reranker(self) -> Optional[BaseReranker]:
         """Create appropriate re-ranker based on strategy."""
-        if self.strategy == RerankingStrategy.DISABLED:
-            return None
-            
-        elif self.strategy == RerankingStrategy.CROSS_ENCODER:
-            try:
-                return CrossEncoderReranker(self.model_name)
-            except ImportError:
-                print("Warning: sentence-transformers not available, disabling cross-encoder re-ranking")
+        match self.strategy:
+            case RerankingStrategy.DISABLED:
                 return None
+            
+            case RerankingStrategy.CROSS_ENCODER:
+                try:
+                    return CrossEncoderReranker(self.model_name)
+                except ImportError:
+                    print("Warning: sentence-transformers not available, disabling cross-encoder re-ranking")
+                    return None
                 
-        elif self.strategy == RerankingStrategy.LLM_BASED:
-            return LLMBasedReranker(self.llm_service)
+            case RerankingStrategy.LLM_BASED:
+                return LLMBasedReranker(self.llm_service)
             
-        elif self.strategy == RerankingStrategy.DIVERSITY_MMR:
-            return DiversityMMRReranker(lambda_param=self.mmr_lambda, embedding_service=self.embedding_service)
+            case RerankingStrategy.DIVERSITY_MMR:
+                return DiversityMMRReranker(lambda_param=self.mmr_lambda, embedding_service=self.embedding_service)
             
-        elif self.strategy == RerankingStrategy.HYBRID:
-            rerankers = []
-            
-            # Try to add cross-encoder
-            try:
-                cross_encoder = CrossEncoderReranker(self.model_name)
-                rerankers.append((cross_encoder, 0.7))
-            except ImportError:
-                pass
-                
-            # Add MMR for diversity
-            if self.embedding_service:
-                mmr = DiversityMMRReranker(lambda_param=self.mmr_lambda, embedding_service=self.embedding_service)
-                rerankers.append((mmr, 0.3))
-                
-            return HybridReranker(rerankers) if rerankers else None
-            
-        return None
-        
+            case RerankingStrategy.HYBRID:
+                rerankers = []
+                try:
+                    cross_encoder = CrossEncoderReranker(self.model_name)
+                    rerankers.append((cross_encoder, 0.7))
+                except ImportError:
+                    pass
+                if self.embedding_service:
+                    mmr = DiversityMMRReranker(lambda_param=self.mmr_lambda, embedding_service=self.embedding_service)
+                    rerankers.append((mmr, 0.3))
+                return HybridReranker(rerankers) if rerankers else None
+
     def rerank(self, query: str, results: List[RetrievalResult]) -> List[RetrievalResult]:
         """
         Re-rank search results.
